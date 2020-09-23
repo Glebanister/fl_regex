@@ -88,6 +88,19 @@ regexpr_s *chr(regexpr_context_s *context, char ch) {
     return new_reg;
 }
 
+regexpr_s *create_seq(regexpr_context_s *context,
+                      regexpr_s *l,
+                      regexpr_s *r) {
+    regexpr_s *new_reg = create_regex_in_context(context);
+    if (!new_reg) {
+        return NULL;
+    }
+    new_reg->type = REG_SEQ;
+    new_reg->first = l;
+    new_reg->second = r;
+    return new_reg;
+}
+
 regexpr_s *seq(regexpr_context_s *context,
                regexpr_s *l,
                regexpr_s *r) {
@@ -98,11 +111,17 @@ regexpr_s *seq(regexpr_context_s *context,
         return l;
     }
 
+    return create_seq(context, l, r);
+}
+
+regexpr_s *create_alt(regexpr_context_s *context,
+                      regexpr_s *l,
+                      regexpr_s *r) {
     regexpr_s *new_reg = create_regex_in_context(context);
     if (!new_reg) {
         return NULL;
     }
-    new_reg->type = REG_SEQ;
+    new_reg->type = REG_ALT;
     new_reg->first = l;
     new_reg->second = r;
     return new_reg;
@@ -120,20 +139,24 @@ regexpr_s *alt(regexpr_context_s *context,
     }
 
     if (l->type == REG_EPSILON) {
-        return re_nullable(r) ? r : alt(context, l, r);
+        return re_nullable(r) ? r : create_alt(context, l, r);
     }
 
     if (r->type == REG_EPSILON) {
-        return re_nullable(l) ? l : alt(context, r, l);
+        return re_nullable(l) ? l : create_alt(context, r, l);
     }
 
+    return create_alt(context, l, r);
+}
+
+regexpr_s *create_star(regexpr_context_s *context,
+                       regexpr_s *r) {
     regexpr_s *new_reg = create_regex_in_context(context);
     if (!new_reg) {
         return NULL;
     }
-    new_reg->type = REG_ALT;
-    new_reg->first = l;
-    new_reg->second = r;
+    new_reg->type = REG_STAR;
+    new_reg->first = r;
     return new_reg;
 }
 
@@ -145,23 +168,16 @@ regexpr_s *star(regexpr_context_s *context,
         case REG_EMPTY:
             return epsilon(context);
         case REG_EPSILON:
+        case REG_STAR:
             return r;
             break;
-        case REG_STAR:
-            return r->first;
 
         default:
             break;
         }
     }
 
-    regexpr_s *new_reg = create_regex_in_context(context);
-    if (!new_reg) {
-        return NULL;
-    }
-    new_reg->type = REG_STAR;
-    new_reg->first = r;
-    return new_reg;
+    return create_star(context, r);
 }
 
 void destroy_regexpr_context(regexpr_context_s *context) {
