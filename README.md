@@ -18,3 +18,12 @@ make
 cd build
 ./test_regex
 ```
+
+## Stress testing
+
+```bash
+cd build
+./stress_regex N
+```
+
+Where `N` * 1000 is stress string size, 50'000 by default.
