@@ -6,15 +6,16 @@
 
 #include "regex.h"
 
-const uint64_t MAX_BYTES = 8ULL * 1024ULL * 1024ULL * 1024ULL; // 8 GB
+const uint64_t DEFAULT_MAX_BYTES = 1024ULL; // 1 GB
+const uint64_t DEFAULT_STRING_LEN = 1e4;               // 50 M symbols
 
 typedef struct mem_info_t {
     void *mem;
     uint64_t size;
 } mem_info_t;
 
-mem_info_t malloc_max(void) {
-    uint64_t cur_try = MAX_BYTES * 2;
+mem_info_t malloc_max(uint64_t max_bytes) {
+    uint64_t cur_try = max_bytes * 2;
     void *mem = NULL;
     while (cur_try && !mem) {
         cur_try >>= 1;
@@ -25,10 +26,17 @@ mem_info_t malloc_max(void) {
 }
 
 int main(int argc, char **argv) {
-    size_t string_len = 5e7;
+    uint64_t string_len = DEFAULT_STRING_LEN;
+    uint64_t max_mem = DEFAULT_MAX_BYTES;
+
     if (argc > 1) {
         string_len = atoi(argv[1]);
     }
+    if (argc > 2) {
+        max_mem = atoi(argv[2]);
+    }
+    string_len *= 1000ULL;
+    max_mem *= 1024UL * 1024;
 
     char *str = (char *)malloc((string_len + 1) * sizeof(char));
     if (!str) {
@@ -40,7 +48,7 @@ int main(int argc, char **argv) {
     }
     str[string_len] = '\0';
 
-    mem_info_t memory = malloc_max();
+    mem_info_t memory = malloc_max(max_mem);
     if (!memory.mem) {
         printf("can not allocate memory");
         free(str);
@@ -50,10 +58,11 @@ int main(int argc, char **argv) {
     regexpr_context_s c;
     c.size = memory.size / sizeof(regexpr_s);
     c.memory = memory.mem;
+    c.last_elem_id = 0;
 
-    printf("memory allocated: %lld megabytes\n", (long long)memory.size / 1024 / 1024);
-    printf("expression: (a | b | cb)*\nstring: 'aaa....'\n");
-    printf("testing on string of size %lld k\n", (long long)string_len / 1000);
+    printf("avaiable memory: %.3f GB\n", (float)memory.size / (1024.f * 1024.f * 1024.f));
+    printf("expression: (a | b | cb)*\nstring: 'aaa....' (%.2f M symbols)\n", (float)string_len / 1000000.f);
+    // printf("testing on string of size %lld k\n", (long long)string_len / 1000);
     time_t start_time = clock();
 
     // (a | b | cb)*
@@ -71,7 +80,8 @@ int main(int argc, char **argv) {
 
     time_t end_time = clock();
 
-    printf("time: %f s\n", (float)(end_time - start_time) / 1000000.f);
+    printf("time: %.2f s\n", (float)(end_time - start_time) / 1000000.f);
+    printf("memory used: %.3f GB\n", (float)(c.last_elem_id) * sizeof(regexpr_s) / 1024.f / 1024.f / 1024.f);
     free(memory.mem);
     free(str);
 }
