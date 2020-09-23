@@ -11,3 +11,10 @@ mkdir build && cd build
 cmake ..
 make
 ```
+
+## Testing
+
+```bash
+cd build
+./test_regex
+```
