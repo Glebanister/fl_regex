@@ -6,8 +6,8 @@
 
 #include "regex.h"
 
-const uint64_t DEFAULT_MAX_BYTES = 1024ULL; // 1 GB
-const uint64_t DEFAULT_STRING_LEN = 1e4;               // 50 M symbols
+const uint64_t DEFAULT_MAX_BYTES = 2ULL * 1024ULL; // 2 GB
+const uint64_t DEFAULT_STRING_LEN = 1e4;           // 10 M symbols
 
 typedef struct mem_info_t {
     void *mem;
@@ -61,27 +61,30 @@ int main(int argc, char **argv) {
     c.last_elem_id = 0;
 
     printf("avaiable memory: %.3f GB\n", (float)memory.size / (1024.f * 1024.f * 1024.f));
-    printf("expression: (a | b | cb)*\nstring: 'aaa....' (%.2f M symbols)\n", (float)string_len / 1000000.f);
-    // printf("testing on string of size %lld k\n", (long long)string_len / 1000);
-    time_t start_time = clock();
 
-    // (a | b | cb)*
+    // (a | a)*
+    {
+        printf("\nexpression: (a | a)*\nstring: 'aaa....' (%.2f M symbols)\n", (float)string_len / 1000000.f);
+        time_t start_time = clock();
+        regexpr_s *reg = star(&c, alt(&c, chr(&c, 'a'), chr(&c, 'a')));
+        re_match(reg, str, &c);
+        time_t end_time = clock();
+        printf("time: %.2f s\n", (float)(end_time - start_time) / 1000000.f);
+        printf("memory used: %.3f GB\n", (float)(c.last_elem_id) * sizeof(regexpr_s) / 1024.f / 1024.f / 1024.f);
+    }
 
-    regexpr_s *reg = star(&c,
-                          alt(&c,
-                              alt(&c,
-                                  chr(&c, 'a'),
-                                  chr(&c, 'b')),
-                              seq(&c,
-                                  chr(&c, 'c'),
-                                  chr(&c, 'b'))));
+    c.last_elem_id = 0;
 
-    re_match(reg, str, &c);
-
-    time_t end_time = clock();
-
-    printf("time: %.2f s\n", (float)(end_time - start_time) / 1000000.f);
-    printf("memory used: %.3f GB\n", (float)(c.last_elem_id) * sizeof(regexpr_s) / 1024.f / 1024.f / 1024.f);
+    // a*
+    {
+        printf("\nexpression: a*\nstring: 'aaa....' (%.2f M symbols)\n", (float)string_len / 1000000.f);
+        time_t start_time = clock();
+        regexpr_s *reg = star(&c, chr(&c, 'a'));
+        re_match(reg, str, &c);
+        time_t end_time = clock();
+        printf("time: %.2f s\n", (float)(end_time - start_time) / 1000000.f);
+        printf("memory used: %.3f GB\n", (float)(c.last_elem_id) * sizeof(regexpr_s) / 1024.f / 1024.f / 1024.f);
+    }
     free(memory.mem);
     free(str);
 }

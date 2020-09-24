@@ -30,29 +30,21 @@ Where
 
 - `th_sym` * 1000 is stress string size, 10'000 by default.
 
-- `mb` maximal memory usage, 1024 by default.
+- `mb` maximal memory usage, 2048 by default.
 
 ### Examples
 
 ```bash
-$ ./stress_regex 50000 6000
-avaiable memory: 5.859 GB
-expression: (a | b | cb)*
-string: 'aaa....' (50.00 M symbols)
-time: 2.06 s
+./build/stress_regex 100000 8000
+avaiable memory: 7.812 GB
+
+expression: (a | a)*
+string: 'aaa....' (100.00 M symbols)
+time: 2.69 s
+memory used: 5.867 GB
+
+expression: a*
+string: 'aaa....' (100.00 M symbols)
+time: 0.66 s
 memory used: 3.912 GB
-
-$ ./stress_regex 5000
-avaiable memory: 1.000 GB
-expression: (a | b | cb)*
-string: 'aaa....' (5.00 M symbols)
-time: 0.23 s
-memory used: 0.391 GB
-
-$ ./stress_regex
-avaiable memory: 1.000 GB
-expression: (a | b | cb)*
-string: 'aaa....' (10.00 M symbols)
-time: 0.44 s
-memory used: 0.782 GB
 ```
